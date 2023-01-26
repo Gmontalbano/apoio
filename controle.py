@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 
-from pandas.io.json import json_normalize
-
 
 def add_item():
     # Carrega o arquivo JSON com os dados do estoque
@@ -19,7 +17,7 @@ def add_item():
         # Salva as alterações no arquivo JSON
         with open("stock.json", "r+") as file:
             stock = json.load(file)
-            stock["items"].append({"name": item_name, 'quantity': item_quantity})
+            stock["items"].append({"name": item_name, 'quantity': item_quantity, "ocupado": 0})
             file.seek(0)
             json.dump(stock, file)
         st.success("Item adicionado com sucesso!")
@@ -50,7 +48,7 @@ def view_stock():
 
     # Converte o dicionário para um dataframe
     # df = pd.DataFrame(stock["items"])
-    df = json_normalize(stock["items"])
+    df = pd.json_normalize(stock["items"])
 
     # Exibe a tabela do estoque
     st.dataframe(df)
