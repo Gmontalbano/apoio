@@ -7,8 +7,6 @@ from controle import main_controle
 from sol import solicitar_item, devolver_item
 import pandas as pd
 from PIL import Image
-import locale
-locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
 
 
 st.set_page_config(page_title='Pioneiros da colina')
