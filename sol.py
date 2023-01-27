@@ -3,18 +3,23 @@ import pandas as pd
 import json
 import sqlite3
 
-conn = sqlite3.connect('data.db')
-c = conn.cursor()
+
 
 
 def qtd_item(item_name):
+    conn = sqlite3.connect('data.db')
+    c = conn.cursor()
     df = pd.read_sql(f"SELECT quantidade, ocupado FROM items WHERE item = '{item_name}'", conn)
+    conn.close()
     qtd = df['quantidade'][0]-df['ocupado'][0]
     return qtd
 
 
 def solicitar_item():
+    conn = sqlite3.connect('data.db')
+    c = conn.cursor()
     df = pd.read_sql('select item from items', conn)
+    conn.close()
     lista = df['item'].tolist()
     # Cria um menu dropdown com os nomes dos itens no estoque
     name, value = st.columns(2)
@@ -40,7 +45,10 @@ def solicitar_item():
 
 
 def devolver_item():
+    conn = sqlite3.connect('data.db')
+    c = conn.cursor()
     df = pd.read_sql('select item, ocupado from items', conn)
+    conn.close()
     lista = df['item'].tolist()
     max_value = df['ocupado'][0]
     name, value = st.columns(2)
@@ -56,6 +64,7 @@ def devolver_item():
             print("ocupado", devolucao)
             c.execute(f'UPDATE items SET ocupado = {devolucao} WHERE item = "{item_name}"')
             conn.commit()
+            conn.close()
             st.experimental_rerun()
             st.success("Item devolvido com sucesso!")
         else:
