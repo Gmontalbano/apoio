@@ -18,34 +18,17 @@ def make_class():
     if uploaded_file is not None:
         df = pd.read_excel(uploaded_file)
         dbv = []
-        for name, birt in zip(df['NOME COMPLETO'], df['DATA DE NASCIMENTO']):
-            if birt.month >= 7:
-                if birt.year == 2012:
-                    dbv.append({'nome': name, 'classe':'amigo', 'mes': birt.month, 'ano': birt.year})
-                if birt.year == 2011:
-                    dbv.append({'nome': name, 'classe':'companheiro', 'mes': birt.month, 'ano': birt.year})
-                if birt.year == 2010:
-                    dbv.append({'nome': name, 'classe':'pesquisador', 'mes': birt.month, 'ano': birt.year})
-                if birt.year == 2009:
-                    dbv.append({'nome': name, 'classe':'pioneiro', 'mes': birt.month, 'ano': birt.year})
-                if birt.year == 2008:
-                    dbv.append({'nome': name, 'classe':'excursionista', 'mes': birt.month, 'ano': birt.year})
-                if birt.year == 2007:
-                    dbv.append({'nome': name, 'classe':'guia', 'mes': birt.month, 'ano': birt.year})
-
-            elif birt.month < 7:
-                if birt.year == 2013:
-                    dbv.append({'nome': name, 'classe':'amigo', 'mes': birt.month, 'ano': birt.year})
-                if birt.year == 2012:
-                    dbv.append({'nome': name, 'classe':'companheiro', 'mes': birt.month, 'ano': birt.year})
-                if birt.year == 2011:
-                    dbv.append({'nome': name, 'classe':'pesquisador', 'mes': birt.month, 'ano': birt.year})
-                if birt.year == 2010:
-                    dbv.append({'nome': name, 'classe':'pioeniro', 'mes': birt.month, 'ano': birt.year})
-                if birt.year == 2009:
-                    dbv.append({'nome': name, 'classe':'excursionista', 'mes': birt.month, 'ano': birt.year})
-                if birt.year == 2008:
-                    dbv.append({'nome': name, 'classe':'guia', 'mes': birt.month, 'ano': birt.year})
-        new_df = pd.DataFrame(dbv)
-        dff = to_excel(new_df)
+        df['CATEGORIA'] = 'AMIGO'
+        df.loc[(df['DATA DE NASCIMENTO'] >= '2011-06-30') & (
+                    df['DATA DE NASCIMENTO'] <= '2012-06-30'), 'CATEGORIA'] = 'COMPANHEIRO'
+        df.loc[(df['DATA DE NASCIMENTO'] >= '2010-06-30') & (
+                    df['DATA DE NASCIMENTO'] <= '2011-06-30'), 'CATEGORIA'] = 'PESQUISADOR'
+        df.loc[(df['DATA DE NASCIMENTO'] >= '2009-06-30') & (
+                    df['DATA DE NASCIMENTO'] <= '2010-06-30'), 'CATEGORIA'] = 'PIONEIRO'
+        df.loc[(df['DATA DE NASCIMENTO'] >= '2008-06-30') & (
+                    df['DATA DE NASCIMENTO'] <= '2009-06-30'), 'CATEGORIA'] = 'EXCURSIONISTA'
+        df.loc[(df['DATA DE NASCIMENTO'] >= '2007-06-30') & (
+                    df['DATA DE NASCIMENTO'] <= '2008-06-30'), 'CATEGORIA'] = 'GUIA'
+        #new_df = pd.DataFrame(dbv)
+        dff = to_excel(df)
         st.download_button("Download", dff, file_name='classes.xlsx')
