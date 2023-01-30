@@ -4,6 +4,7 @@ import streamlit as st
 import sqlite3
 import hashlib
 from controle import main_controle
+from classes import make_class
 from sol import solicitar_item, devolver_item
 import pandas as pd
 from PIL import Image
@@ -77,6 +78,8 @@ def main():
                 menu = ["Solicitação de material"]
             elif permission == 'apoio':
                 menu = ["Solicitação de material", "Estoque"]
+            elif permission == 'secretaria':
+                menu = ['Classes']
 
             choice = st.sidebar.selectbox("Selecione uma opção", menu)
             if choice == "Solicitação de material":
@@ -94,7 +97,7 @@ def main():
                 new_user = st.text_input("Username", key="new_user")
                 new_email = st.text_input("Email", key="new_email")
                 new_password = st.text_input("Password", type='password', key="new_pass")
-                type_permission = ['admin', 'user', 'apoio']
+                type_permission = ['admin', 'user', 'apoio', 'secretaria']
                 perm = st.selectbox("Permissão", type_permission)
                 if st.button("Adicionar user"):
                     add_userdata(new_user, make_hashes(new_password),new_email, perm)
@@ -103,6 +106,9 @@ def main():
                 user_result = view_all_users()
                 clean_db = pd.DataFrame(user_result)
                 st.dataframe(clean_db)
+            elif choice == 'Classes':
+                make_class()
+
         else:
             st.warning("Incorrect Username/Password")
     else:
