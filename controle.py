@@ -13,7 +13,7 @@ def add_item():
     item_quantity = st.number_input("Insira a quantidade do item a ser adicionado", min_value=1, value=1)
     if st.button("Adicionar item"):
         # Salva as alterações
-        c.execute(f"INSERT INTO items (item, quantidade, ocupado) VALUES ('{item_name}', '{item_quantity}', 0)")
+        c.execute(f"INSERT INTO items (item, quantidade) VALUES ('{item_name}', '{item_quantity}')")
         conn.commit()
         st.success("Item adicionado com sucesso!")
 
@@ -40,26 +40,22 @@ def devolver_item():
     # alterar para tabela historico e tirar coluna ocupado
     conn = sqlite3.connect('data.db')
     c = conn.cursor()
-    df = pd.read_sql('select item, ocupado from items', conn)
+    df = pd.read_sql('select item from items', conn)
 
     lista = df['item'].tolist()
-    max_value = df['ocupado'][0]
     name, value = st.columns(2)
     # Cria um menu dropdown com  os nomes dos itens no estoque
     item_name = name.selectbox("Selecione o item para devolver", lista)
-    value.metric('Ocupado', max_value)
     # Recebe a quantidade do item a ser devolvido
     item_quantity = st.number_input("Insira a quantidade do item a ser devolvido", min_value=1, value=1)
     if st.button("Devolver item"):
-        if item_quantity <= max_value:
-            df = pd.read_sql(f"select ocupado from items where item = '{item_name}'", conn)
-            devolucao = df['ocupado'][0] - item_quantity
-            c.execute(f'UPDATE items SET ocupado = {devolucao} WHERE item = "{item_name}"')
-            conn.commit()
-            st.experimental_rerun()
-            st.success("Item devolvido com sucesso!")
-        else:
-            st.error(f"Quantidade devolvida maior que emprestada", icon="🚨")
+        df = pd.read_sql(f"select ocupado from items where item = '{item_name}'", conn)
+        devolucao = df['ocupado'][0] - item_quantity
+        c.execute(f'UPDATE items SET ocupado = {devolucao} WHERE item = "{item_name}"')
+        conn.commit()
+        st.experimental_rerun()
+        st.success("Item devolvido com sucesso!")
+
     conn.close()
 
 
