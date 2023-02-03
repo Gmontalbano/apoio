@@ -26,6 +26,8 @@ if "has_pedido_user" not in st.session_state:
     st.session_state.has_pedido_user = False
 if "pedido_c" not in st.session_state:
     st.session_state.pedido_c = {}
+if "loggin" not in st.session_state:
+    st.session_state.loggin = False
 
 
 def make_hashes(password):
@@ -76,7 +78,8 @@ def main():
 
     username = st.sidebar.text_input("User Name")
     password = st.sidebar.text_input("Password", type='password')
-    if st.sidebar.checkbox("Login"):  # trocar para button e redirect
+    if st.sidebar.button("Login") or st.session_state.loggin:
+        st.session_state.loggin = True
         hashed_pswd = make_hashes(password)
         result, permission = login_user(username, check_hashes(password, hashed_pswd))
 
