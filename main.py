@@ -138,12 +138,13 @@ def main():
         diad = devo.selectbox("Dia", range(1, 32), key='dd')
         mesd = devo.selectbox("Mes", meses, key='dm')
         if tab3.button("Solcitar material"):
-            text = f"{nome} do departamento {dep} solcitou material \n Coleta: {dia}/{mes} \n Devolução: {diad}/{mesd} \n {email} |  {telefone}"
-            send(text)
-            text = f"Olá, {nome}.\n" \
-                   f"Obrigado por utilizar nosso sistema de solicitação de materiais, em breve entraremos em contato para confirmarmos a disponibilidade e entrega\n" \
-                   f"Grato, Clube de desbravadores pioneiros da colina"
-            send_client(text, email)
+            with st.spinner(text="Fazendo solicitação..."):
+                text = f"{nome} do departamento {dep} solcitou material \n Coleta: {dia}/{mes} \n Devolução: {diad}/{mesd} \n {email} |  {telefone}"
+                send(text)
+                text = f"Olá, {nome}.\n" \
+                       f"Obrigado por utilizar nosso sistema de solicitação de materiais, em breve entraremos em contato para confirmarmos a disponibilidade e entrega\n" \
+                       f"Grato, Clube de desbravadores pioneiros da colina"
+                send_client(text, email)
             st.success("Solcitação enviada")
 
 
