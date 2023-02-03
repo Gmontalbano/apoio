@@ -33,13 +33,15 @@ def check_data(data):
 def check_pedido(data):
     conn = sqlite3.connect('./data.db')
     df = pd.read_sql(f"SELECT pedido  FROM solicitacao_interna WHERE username = '{st.session_state.username}' AND reuniao = '{data}'", conn)
+    if st.session_state.username not in st.session_state.pedido_user:
+        st.session_state.pedido_user[st.session_state.username] = {}
     if len(df) != 0:
         st.session_state.has_pedido_user = True
-        st.session_state.pedido_user[data] = eval(df['pedido'][0])
+        st.session_state.pedido_user[st.session_state.username][data] = eval(df['pedido'][0])
     else:
-        st.session_state.pedido_user[data] = {}
-        st.session_state.has_pedido_user = False
 
+        st.session_state.pedido_user[st.session_state.username] = {data: {}}
+        st.session_state.has_pedido_user = False
 
 
 def check_pedido_c(data):
@@ -49,6 +51,7 @@ def check_pedido_c(data):
         st.session_state.pedido_c = eval(df['pedido'][0])
     else:
         st.session_state.pedido_c = {}
+
 
 def difference(novo, antigo):
     result = {}
@@ -65,6 +68,7 @@ def difference(novo, antigo):
             result[key] = {'item': key, 'qtd': -antigo[key]['qtd']}
     return result
 
+
 def solicitar_item():
     conn = sqlite3.connect('data.db')
     c = conn.cursor()
@@ -73,8 +77,11 @@ def solicitar_item():
     if st.button("data") or st.session_state.sub_data:
         st.session_state.sub_data = True
         check_pedido_c(data)
-        if data in st.session_state.pedido_data and data in st.session_state.pedido_user:
+        if st.session_state.username not in st.session_state.pedido_user:
+            st.session_state.pedido_user[st.session_state.username] = {}
+        if data in st.session_state.pedido_user[st.session_state.username]:
             if data >= end_date:
+                check_data(data)
                 name, value = st.columns(2)
                 lista = check_itens()
                 item_name = name.selectbox("Selecione o item para solicitar", lista)
@@ -82,7 +89,7 @@ def solicitar_item():
                 if item_name in st.session_state.pedido_data[data]:
                     max_value -= st.session_state.pedido_data[data][item_name]['qtd']
                 if item_name in st.session_state.pedido_c:
-                    sub = st.session_state.pedido_c[item_name]['qtd'] - st.session_state.pedido_user[data][item_name]['qtd']
+                    sub = st.session_state.pedido_c[item_name]['qtd'] - st.session_state.pedido_user[st.session_state.username][data][item_name]['qtd']
                     if sub > 0:
                         max_value += sub
                 value.metric("Disponivel", max_value)
@@ -93,28 +100,28 @@ def solicitar_item():
                 else:
                     if b1.button("Adicionar item item") and item_quantity > 0:
                         if item_quantity <= max_value:
-                            if item_name not in st.session_state.pedido_user[data]:
-                                st.session_state.pedido_user[data][item_name] = {'item': item_name, 'qtd': item_quantity}
+                            if item_name not in st.session_state.pedido_user[st.session_state.username][data]:
+                                st.session_state.pedido_user[st.session_state.username][data][item_name] = {'item': item_name, 'qtd': item_quantity}
                             else:
-                                st.session_state.pedido_user[data][item_name]['qtd'] += item_quantity
+                                st.session_state.pedido_user[st.session_state.username][data][item_name]['qtd'] += item_quantity
                         else:
                             b1.error("Quantidade solicitada maior que a disponivel")
                         st.experimental_rerun()
 
                 if b2.button("Remover item") and item_quantity > 0:
-                    if item_name in st.session_state.pedido_user[data]:
-                        if item_quantity <= st.session_state.pedido_user[data][item_name]['qtd']:
-                            st.session_state.pedido_user[data][item_name]['qtd'] -= item_quantity
+                    if item_name in st.session_state.pedido_user[st.session_state.username][data]:
+                        if item_quantity <= st.session_state.pedido_user[st.session_state.username][data][item_name]['qtd']:
+                            st.session_state.pedido_user[st.session_state.username][data][item_name]['qtd'] -= item_quantity
                         else:
                             st.error("Não é possível remover mais que o solicitado")
                     st.experimental_rerun()
                 with st.container():
                     st.subheader("Materiais solicitados")
-                    for i in st.session_state.pedido_user[data]:
-                        st.write(f"{i}: {st.session_state.pedido_user[data][i]['qtd']}")
+                    for i in st.session_state.pedido_user[st.session_state.username][data]:
+                        st.write(f"{i}: {st.session_state.pedido_user[st.session_state.username][data][i]['qtd']}")
                 e, bt, e2 = st.columns(3)
                 if bt.button("Finalizar solicitação"):
-                    X = str(st.session_state.pedido_user[data])
+                    X = str(st.session_state.pedido_user[st.session_state.username][data])
                     X = X.replace("'", '"')
                     if st.session_state.has_pedido_user:
                         query = f"UPDATE solicitacao_interna SET pedido = '{X}' WHERE username = '{st.session_state.username}' AND reuniao = '{data}'"
@@ -124,7 +131,7 @@ def solicitar_item():
                     c.execute(query)
 
                     if st.session_state.has_pedido_data:
-                        dif = difference(st.session_state.pedido_user[data], st.session_state.pedido_c)
+                        dif = difference(st.session_state.pedido_user[st.session_state.username][data], st.session_state.pedido_c)
                         for i in dif:
                             if i in st.session_state.pedido_data[data]:
                                 st.session_state.pedido_data[data][i]['qtd'] += dif[i]['qtd']
@@ -139,7 +146,6 @@ def solicitar_item():
                     st.session_state.pedido_c = {}
                     st.session_state.pedido_data = {}
                     st.session_state.pedido_user = {}
-                    check_data(data)
                     check_pedido(data)
                     st.experimental_rerun()
             else:
