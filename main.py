@@ -49,8 +49,9 @@ def create_usertable():
     c.execute('CREATE TABLE IF NOT EXISTS userstable(username TEXT,password TEXT)')
 
 
-def add_userdata(username, password,email,permission):
-    c.execute('INSERT INTO userstable(username,password,email,permission) VALUES (?,?,?,?)', (username, password, email, permission))
+def add_userdata(username, password, email, permission):
+    c.execute('INSERT INTO userstable(username,password,email,permission) VALUES (?,?,?,?)',
+              (username, password, email, permission))
     conn.commit()
 
 
@@ -68,8 +69,7 @@ def view_all_users():
 
 
 def main():
-
-    img, title_text = st.columns([1,2])
+    img, title_text = st.columns([1, 2])
     image = Image.open('imgs/pc_logo.jpg')
     img.image(image, caption='Mais que um clube, uma familia')
     title_text.title("Pioneiros da colina")
@@ -86,22 +86,17 @@ def main():
         if result:
             st.session_state.username = username
             st.session_state.load_state = True
-            # st.success("Logged In as {}".format(username))
 
-            if permission == 'admin':
-                menu = ["Solicitação de material", "Estoque", "Usuarios", "Classes"]
-            elif permission == 'user':
-                menu = ["Solicitação de material"]
-            elif permission == 'apoio':
-                menu = ["Solicitação de material", "Estoque"]
-            elif permission == 'secretaria':
-                menu = ['Classes']
+            type_permission = {'admin': ["Solicitação de material", "Estoque", "Usuarios", "Classes"],
+                               'user': ["Solicitação de material"],
+                               'apoio': ["Solicitação de material", "Estoque"],
+                               'secretaria': ['Classes']}
+            menu = type_permission[permission]
 
             choice = st.sidebar.selectbox("Selecione uma opção", menu)
+
             if choice == "Solicitação de material":
                 solicitar_item()
-
-
             elif choice == "Estoque":
                 main_controle()
             elif choice == "Usuarios":
@@ -112,7 +107,7 @@ def main():
                 type_permission = ['admin', 'user', 'apoio', 'secretaria']
                 perm = st.selectbox("Permissão", type_permission)
                 if st.button("Adicionar user"):
-                    add_userdata(new_user, make_hashes(new_password),new_email, perm)
+                    add_userdata(new_user, make_hashes(new_password), new_email, perm)
                     st.success("You have successfully created a valid Account")
                 st.subheader("Users Profiles")
                 user_result = view_all_users()
@@ -135,7 +130,7 @@ def main():
         meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
         coleta, devo = tab3.columns(2)
         coleta.subheader("Dia para coletar o material")
-        dia = coleta.selectbox("Dia", range(1,32), key='cd')
+        dia = coleta.selectbox("Dia", range(1, 32), key='cd')
         mes = coleta.selectbox("Mes", meses, key='cm')
         devo.subheader("Devolução o material")
         diad = devo.selectbox("Dia", range(1, 32), key='dd')
