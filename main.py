@@ -144,6 +144,7 @@ def main():
                    f"Obrigado por utilizar nosso sistema de solicitação de materiais, em breve entraremos em contato para confirmarmos a disponibilidade e entrega\n" \
                    f"Grato, Clube de desbravadores pioneiros da colina"
             send_client(text, email)
+            st.success("Solcitação enviada")
 
 
 if __name__ == '__main__':
