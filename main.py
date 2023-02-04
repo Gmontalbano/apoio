@@ -30,6 +30,27 @@ if "loggin" not in st.session_state:
     st.session_state.loggin = False
 
 
+def card(title, content, color='white'):
+    """Exibe um card no estilo Trello.
+
+    Arguments:
+        title {str} -- Título do card
+        content {str} -- Conteúdo do card
+        color {str} -- Cor de fundo do card (default: {'white'})
+
+    Returns:
+        None
+    """
+    card_style = f"background-color: {color}; padding: 10px; border-radius: 10px; margin: 10px 0"
+    title_style = "font-weight: bold; font-size: 20px; margin-bottom: 10px"
+    content_style = "font-size: 16px"
+
+    st.markdown(f"<div style='{card_style}'>", unsafe_allow_html=True)
+    st.markdown(f"<p style='{title_style}'>{title}</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='{content_style}'>{content}</p>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def make_hashes(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
@@ -87,7 +108,7 @@ def main():
             st.session_state.username = username
             st.session_state.load_state = True
 
-            type_permission = {'admin': ["Solicitação de material", "Estoque", "Usuarios", "Classes"],
+            type_permission = {'admin': ["Solicitação de material", "Estoque", "Usuarios", "Classes","Card"],
                                'user': ["Solicitação de material"],
                                'apoio': ["Solicitação de material", "Estoque"],
                                'secretaria': ['Classes']}
@@ -115,36 +136,48 @@ def main():
                 st.dataframe(clean_db)
             elif choice == 'Classes':
                 make_class()
+            elif choice == 'Card':
+                card("Título do card", "Conteúdo do card", color='lightblue')
+                card("Título do card 2 ", "Conteúdo do card 2", color='lightgray')
 
         else:
             st.warning("Incorrect Username/Password")
     else:
         tab1, tab2, tab3 = st.tabs(["Nosso clube", "Inscrição de membros", "Solicitação externa"])
-        tab3.subheader("Solicitação de empréstimo de material")
-        tab3.markdown("O empréstimo é feito exclusivamente para departamentos interndo do UNASP-SP")
-        nome = tab3.text_input("Nome", key="requester_name")
-        email = tab3.text_input("Email", key="requester_email")
-        telefone = tab3.text_input("Telefone", key="requester_tel")
-        # tab3.text_input("CPF", key="requester_cpf")
-        dep = tab3.text_input("Departamento", key="requester_departament")
-        meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
-        coleta, devo = tab3.columns(2)
-        coleta.subheader("Dia para coletar o material")
-        dia = coleta.selectbox("Dia", range(1, 32), key='cd')
-        mes = coleta.selectbox("Mes", meses, key='cm')
-        devo.subheader("Devolução o material")
-        diad = devo.selectbox("Dia", range(1, 32), key='dd')
-        mesd = devo.selectbox("Mes", meses, key='dm')
-        if tab3.button("Solcitar material"):
-            with st.spinner(text="Fazendo solicitação..."):
-                text = f"{nome} do departamento {dep} solcitou material \n Coleta: {dia}/{mes} \n Devolução: {diad}/{mesd} \n {email} |  {telefone}"
-                send(text)
-                text = f"Olá, {nome}.\n" \
-                       f"Obrigado por utilizar nosso sistema de solicitação de materiais, em breve entraremos em contato para confirmarmos a disponibilidade e entrega\n" \
-                       f"Grato, Clube de desbravadores pioneiros da colina"
-                send_client(text, email)
-            tab3.success("Solcitação enviada")
+        with tab3:
+            tab3.subheader("Solicitação de empréstimo de material")
+            tab3.markdown("O empréstimo é feito exclusivamente para departamentos interndo do UNASP-SP")
+            nome = tab3.text_input("Nome", key="requester_name")
+            email = tab3.text_input("Email", key="requester_email")
+            telefone = tab3.text_input("Telefone", key="requester_tel")
+            # tab3.text_input("CPF", key="requester_cpf")
+            dep = tab3.text_input("Departamento", key="requester_departament")
+            meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+            coleta, devo = tab3.columns(2)
+            coleta.subheader("Dia para coletar o material")
+            dia = coleta.selectbox("Dia", range(1, 32), key='cd')
+            mes = coleta.selectbox("Mes", meses, key='cm')
+            devo.subheader("Devolução o material")
+            diad = devo.selectbox("Dia", range(1, 32), key='dd')
+            mesd = devo.selectbox("Mes", meses, key='dm')
+            me, bc = st.columns(2)
+            me.metric("Mesas", 40)
+            bc.metric("Bancos", 300)
+            mesas = me.number_input("Insira a quantidade de mesas",step=1)
+            bancos = bc.number_input("Insira a quantidade de bancos",step=1)
+            if tab3.button("Solcitar material"):
+                with st.spinner(text="Fazendo solicitação..."):
+                    text = f"{nome} do departamento {dep} solcitou material \n Coleta: {dia}/{mes} \n Devolução: {diad}/{mesd} \n Mesas: {mesas} \n Bancos: {bancos}\n{email} |  {telefone}"
+                    send(text)
+                    text = f"Olá, {nome}.\n" \
+                           f"Obrigado por utilizar nosso sistema de solicitação de materiais, em breve entraremos em contato para confirmarmos a disponibilidade e entrega\n" \
+                           f"Grato, Clube de desbravadores pioneiros da colina" \
+                           f"Solicitação \nMesas: {mesas} \n Bancos: {bancos}\n" \
+                           f"Este email é uma confirmação da solicitação, entraremos em contato para aprovar o empréstimo"
+                    send_client(text, email)
+                tab3.success("Solcitação enviada")
 
 
 if __name__ == '__main__':
     main()
+
