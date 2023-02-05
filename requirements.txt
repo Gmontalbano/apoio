@@ -3,3 +3,4 @@ streamlit~=1.17.0
 pillow~=9.4.0
 sqlalchemy~=1.4.39
 psycopg2
+psycopg2-binary
