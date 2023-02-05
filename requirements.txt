@@ -1,6 +1,7 @@
-pandas~=1.5.2
-streamlit~=1.17.0
-pillow~=9.4.0
-sqlalchemy~=1.4.39
-psycopg2
+pandas
+streamlit
+pillow
+sqlalchemy
+
 psycopg2-binary
+
