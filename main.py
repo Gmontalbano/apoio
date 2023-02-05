@@ -167,7 +167,7 @@ def main():
             bancos = bc.number_input("Insira a quantidade de bancos",step=1)
             if tab3.button("Solcitar material"):
                 with st.spinner(text="Fazendo solicitação..."):
-                    text = f"{nome} do departamento {dep} solcitou material \n Coleta: {dia}/{mes} \n Devolução: {diad}/{mesd} \n Mesas: {mesas} \n Bancos: {bancos}\n{email} |  {telefone}"
+                    text = f"{nome} do departamento {dep} solicitou material \n Coleta: {dia}/{mes} \n Devolução: {diad}/{mesd} \n Mesas: {mesas} \n Bancos: {bancos}\n{email} |  {telefone}"
                     send(text)
                     text = f"Olá, {nome}.\n" \
                            f"Obrigado por utilizar nosso sistema de solicitação de materiais, em breve entraremos em contato para confirmarmos a disponibilidade e entrega\n" \
