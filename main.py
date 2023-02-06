@@ -1,12 +1,14 @@
 import streamlit as st
 import sqlite3
-import hashlib
+from PIL import Image
+
 from controle import main_controle
 from classes import make_class
 from sol import solicitar_item
-import pandas as pd
-from PIL import Image
 from send_email import send, send_client
+from user_managements import users_manage
+from hashes import make_hashes,check_hashes
+
 
 st.set_page_config(page_title='Pioneiros da colina')
 
@@ -51,29 +53,11 @@ def card(title, content, color='white'):
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-def make_hashes(password):
-    return hashlib.sha256(str.encode(password)).hexdigest()
 
-
-def check_hashes(password, hashed_text):
-    if make_hashes(password) == hashed_text:
-        return hashed_text
-    return False
 
 
 conn = sqlite3.connect('data.db')
 c = conn.cursor()
-
-
-# DB  Functions
-def create_usertable():
-    c.execute('CREATE TABLE IF NOT EXISTS userstable(username TEXT,password TEXT)')
-
-
-def add_userdata(username, password, email, permission):
-    c.execute('INSERT INTO userstable(username,password,email,permission) VALUES (?,?,?,?)',
-              (username, password, email, permission))
-    conn.commit()
 
 
 def login_user(username, password):
@@ -82,11 +66,6 @@ def login_user(username, password):
     c.execute('SELECT permission FROM userstable WHERE username =? AND password = ?', (username, password))
     permission = c.fetchall()
     return data, permission[0][0]
-
-
-def view_all_users():
-    df = pd.read_sql('select username, email, permission from userstable', conn)
-    return df
 
 
 def main():
@@ -121,19 +100,7 @@ def main():
             elif choice == "Estoque":
                 main_controle()
             elif choice == "Usuarios":
-                st.subheader("Create New Account")
-                new_user = st.text_input("Username", key="new_user")
-                new_email = st.text_input("Email", key="new_email")
-                new_password = st.text_input("Password", type='password', key="new_pass")
-                type_permission = ['admin', 'user', 'apoio', 'secretaria']
-                perm = st.selectbox("Permissão", type_permission)
-                if st.button("Adicionar user"):
-                    add_userdata(new_user, make_hashes(new_password), new_email, perm)
-                    st.success("You have successfully created a valid Account")
-                st.subheader("Users Profiles")
-                user_result = view_all_users()
-                clean_db = pd.DataFrame(user_result)
-                st.dataframe(clean_db)
+                users_manage()
             elif choice == 'Classes':
                 make_class()
             elif choice == 'Card':
