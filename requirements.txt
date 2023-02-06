@@ -3,5 +3,6 @@ streamlit
 pillow
 sqlalchemy
 openpyxl
+xlsxwriter
 psycopg2-binary
 
