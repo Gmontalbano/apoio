@@ -2,6 +2,6 @@ pandas
 streamlit
 pillow
 sqlalchemy
-
+openpyxl
 psycopg2-binary
 
