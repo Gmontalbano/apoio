@@ -53,9 +53,6 @@ def card(title, content, color='white'):
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-
-
-
 conn = sqlite3.connect('data.db')
 c = conn.cursor()
 
@@ -65,7 +62,10 @@ def login_user(username, password):
     data = c.fetchall()
     c.execute('SELECT permission FROM userstable WHERE username =? AND password = ?', (username, password))
     permission = c.fetchall()
-    return data, permission[0][0]
+    if data:
+        return data, permission[0][0]
+    else:
+        return data, 0
 
 
 def main():
@@ -87,7 +87,7 @@ def main():
             st.session_state.username = username
             st.session_state.load_state = True
 
-            type_permission = {'admin': ["Solicitação de material", "Estoque", "Usuarios", "Classes","Card"],
+            type_permission = {'admin': ["Solicitação de material", "Estoque", "Usuarios", "Classes", "Card"],
                                'user': ["Solicitação de material"],
                                'apoio': ["Solicitação de material", "Estoque"],
                                'secretaria': ['Classes']}
@@ -108,7 +108,7 @@ def main():
                 card("Título do card 2 ", "Conteúdo do card 2", color='lightgray')
 
         else:
-            st.warning("Incorrect Username/Password")
+            st.sidebar.error("Incorrect Username/Password")
     else:
         tab1, tab2, tab3 = st.tabs(["Nosso clube", "Inscrição de membros", "Solicitação externa"])
         with tab3:
