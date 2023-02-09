@@ -10,6 +10,9 @@ from user_managements import users_manage
 from hashes import make_hashes, check_hashes
 from cal import tt_cal, cal_2
 
+import pywhatkit
+import pandas as pd
+
 st.set_page_config(page_title='Pioneiros da colina')
 
 if "load_state" not in st.session_state:
@@ -66,7 +69,7 @@ def main():
             st.session_state.username = username
             st.session_state.load_state = True
 
-            type_permission = {'admin': ["Solicitação de material", "Estoque", "Usuarios", "Classes", "Calendário"],
+            type_permission = {'admin': ["Solicitação de material", "Estoque", "Usuarios", "Classes", "Calendário", "Whats"],
                                'user': ["Solicitação de material"],
                                'apoio': ["Solicitação de material", "Estoque"],
                                'secretaria': ['Classes']}
@@ -85,11 +88,27 @@ def main():
             elif choice == "Calendário":
                 #tt_cal()
                 cal_2()
+            elif choice == "Whats":
+                base = pd.read_excel("base.xlsx")
+                base = base.reset_index()
+                print(base)
+                # pywhatkit.sendwhats_image("AB123CDEFGHijklmn", "Images/Hello.png", "Hello")
+                if st.button("Send"):
+                    for index, contact in base.iterrows():
+                        if contact['tipo'] == 1:
+                            pywhatkit.sendwhatmsg_instantly(f"+{contact['numero']}", "teste bot", wait_time=7,
+                                                            tab_close=True)
+                        elif contact['tipo'] == 2:
+                            pywhatkit.sendwhatmsg_to_group_instantly(contact['numero'], "bot gp", wait_time=7,
+                                                                     tab_close=True)
+                    st.write("Done")
+
 
         else:
             st.sidebar.error("Incorrect Username/Password")
     else:
         tab1, tab2, tab3 = st.tabs(["Nosso clube", "Inscrição de membros", "Solicitação externa"])
+
         with tab3:
             tab3.subheader("Solicitação de empréstimo de material")
             tab3.markdown("O empréstimo é feito exclusivamente para departamentos interndo do UNASP-SP")
