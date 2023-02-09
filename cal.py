@@ -45,12 +45,10 @@ def cal_2():
                                                                                                 'border="2"').replace(
         'cellpadding="0"', 'cellpadding="2"')
     for event in dates:
-        print(event['day'])
         x = x.replace(f">{event['day']}<", f'style="background-color:#464e5f">{event["day"]}<')
 
     x = x.split("<body>")
     x = x[0]
-    print(x)
 
     co, ev = st.columns(2)
     with co:

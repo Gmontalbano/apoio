@@ -24,7 +24,6 @@ def send(text):
     email_msg.attach(MIMEText(corpo, 'plain'))
 
     server.sendmail(email_msg['From'], email_msg['To'], email_msg.as_string())
-    print("feito")
     server.quit()
 
 
@@ -49,5 +48,4 @@ def send_client(text, adress):
     email_msg.attach(MIMEText(corpo, 'plain'))
 
     server.sendmail(email_msg['From'], email_msg['To'], email_msg.as_string())
-    print("feito")
     server.quit()

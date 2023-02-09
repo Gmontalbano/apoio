@@ -55,9 +55,6 @@ def check_pedido_c(data):
 
 def difference(novo, antigo):
     result = {}
-    print(f"Novo: {novo}")
-    print("\n")
-    print(f"ANtigo: {antigo}")
     for key in novo:
         if key in antigo:
             result[key] = {'item': key, 'qtd': novo[key]['qtd'] - antigo[key]['qtd']}
@@ -127,7 +124,6 @@ def solicitar_item():
                         query = f"UPDATE solicitacao_interna SET pedido = '{X}' WHERE username = '{st.session_state.username}' AND reuniao = '{data}'"
                     else:
                         query = f"INSERT INTO solicitacao_interna(username, pedido, reuniao) VALUES ('{st.session_state.username}', '{X}', '{data}')"
-                    print(query)
                     c.execute(query)
 
                     if st.session_state.has_pedido_data:
