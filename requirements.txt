@@ -1,4 +1,4 @@
-pandas
+pandas~=1.5.3
 streamlit
 pillow
 sqlalchemy~=2.0.2
