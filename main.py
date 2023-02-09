@@ -7,8 +7,8 @@ from classes import make_class
 from sol import solicitar_item
 from send_email import send, send_client
 from user_managements import users_manage
-from hashes import make_hashes,check_hashes
-
+from hashes import make_hashes, check_hashes
+from cal import tt_cal, cal_2
 
 st.set_page_config(page_title='Pioneiros da colina')
 
@@ -31,28 +31,6 @@ if "pedido_c" not in st.session_state:
 if "loggin" not in st.session_state:
     st.session_state.loggin = False
 
-
-def card(title, content, color='white'):
-    """Exibe um card no estilo Trello.
-
-    Arguments:
-        title {str} -- Título do card
-        content {str} -- Conteúdo do card
-        color {str} -- Cor de fundo do card (default: {'white'})
-
-    Returns:
-        None
-    """
-    card_style = f"background-color: {color}; padding: 10px; border-radius: 10px; margin: 10px 0"
-    title_style = "font-weight: bold; font-size: 20px; margin-bottom: 10px"
-    content_style = "font-size: 16px"
-
-    st.markdown(f"<div style='{card_style}'>", unsafe_allow_html=True)
-    st.markdown(f"<p style='{title_style}'>{title}</p>", unsafe_allow_html=True)
-    st.markdown(f"<p style='{content_style}'>{content}</p>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
 conn = sqlite3.connect('data.db')
 c = conn.cursor()
 
@@ -69,6 +47,7 @@ def login_user(username, password):
 
 
 def main():
+
     img, title_text = st.columns([1, 2])
     image = Image.open('imgs/pc_logo.jpg')
     img.image(image, caption='Mais que um clube, uma familia')
@@ -87,7 +66,7 @@ def main():
             st.session_state.username = username
             st.session_state.load_state = True
 
-            type_permission = {'admin': ["Solicitação de material", "Estoque", "Usuarios", "Classes", "Card"],
+            type_permission = {'admin': ["Solicitação de material", "Estoque", "Usuarios", "Classes", "Calendário"],
                                'user': ["Solicitação de material"],
                                'apoio': ["Solicitação de material", "Estoque"],
                                'secretaria': ['Classes']}
@@ -103,9 +82,9 @@ def main():
                 users_manage()
             elif choice == 'Classes':
                 make_class()
-            elif choice == 'Card':
-                card("Título do card", "Conteúdo do card", color='lightblue')
-                card("Título do card 2 ", "Conteúdo do card 2", color='lightgray')
+            elif choice == "Calendário":
+                #tt_cal()
+                cal_2()
 
         else:
             st.sidebar.error("Incorrect Username/Password")
@@ -130,8 +109,8 @@ def main():
             me, bc = st.columns(2)
             me.metric("Mesas", 40)
             bc.metric("Bancos", 300)
-            mesas = me.number_input("Insira a quantidade de mesas",step=1)
-            bancos = bc.number_input("Insira a quantidade de bancos",step=1)
+            mesas = me.number_input("Insira a quantidade de mesas", step=1)
+            bancos = bc.number_input("Insira a quantidade de bancos", step=1)
             if tab3.button("Solcitar material"):
                 with st.spinner(text="Fazendo solicitação..."):
                     text = f"{nome} do departamento {dep} solicitou material \n Coleta: {dia}/{mes} \n Devolução: {diad}/{mesd} \n Mesas: {mesas} \n Bancos: {bancos}\n{email} |  {telefone}"
@@ -147,4 +126,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

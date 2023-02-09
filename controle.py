@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
+
 conn = sqlite3.connect('data.db')
 c = conn.cursor()
 
@@ -65,6 +66,27 @@ def mat_reu():
     st.dataframe(df)
 
 
+def card(title, content, color='white'):
+    """Exibe um card no estilo Trello.
+
+    Arguments:
+        title {str} -- Título do card
+        content {str} -- Conteúdo do card
+        color {str} -- Cor de fundo do card (default: {'white'})
+
+    Returns:
+        None
+    """
+    card_style = f"background-color: {color}; padding: 10px; border-radius: 10px; margin: 10px 0"
+    title_style = "font-weight: bold; font-size: 20px; margin-bottom: 10px"
+    content_style = "font-size: 16px"
+
+    st.markdown(f"<div style='{card_style}'>", unsafe_allow_html=True)
+    st.markdown(f"<p style='{title_style}'>{title}</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='{content_style}'>{content}</p>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def sol_dia():
     df = pd.read_sql('SELECT DISTINCT reuniao FROM solicitacao_interna', conn)
     datas = df['reuniao'].tolist()
@@ -72,11 +94,15 @@ def sol_dia():
     dff = pd.read_sql(f"SELECT * FROM solicitacao_interna WHERE reuniao = '{choice}'", conn)
     st.dataframe(dff)
     for index, row in dff.iterrows():
-        st.write(f"Solicitante: {row['username']}")
+        p = ""
         pedido = eval(row['pedido'])
         for x in pedido:
-            st.write(f"{x}: {pedido[x]['qtd']}")
-    mat_reu()
+            p += f"{x}: {pedido[x]['qtd']} <br>"
+        card(f"{row['username']}", f"{p}", color='lightblue')
+
+
+
+    #mat_reu()
 
 
 def main_controle():
