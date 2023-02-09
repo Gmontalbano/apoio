@@ -1,8 +1,8 @@
-pandas
+pandas~=1.5.3
 streamlit
 pillow
-sqlalchemy
-openpyxl
-xlsxwriter
+sqlalchemy~=2.0.2
+openpyxl~=3.1.0
+xlsxwriter~=3.0.8
 psycopg2-binary
 
