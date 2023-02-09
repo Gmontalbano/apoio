@@ -5,4 +5,4 @@ sqlalchemy
 openpyxl
 xlsxwriter
 psycopg2-binary
-
+pywhatkit
