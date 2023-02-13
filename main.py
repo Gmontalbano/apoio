@@ -91,7 +91,7 @@ def main():
         else:
             st.sidebar.error("Incorrect Username/Password")
     else:
-        tab1, tab2, tab3 = st.tabs(["Nosso clube", "Inscrição de membros", "Solicitação externa"])
+        tab1, tab2, tab3 = st.tabs(["Nosso clube", "Calendário", "Solicitação externa"])
         with tab2:
             calendario()
         with tab3:
