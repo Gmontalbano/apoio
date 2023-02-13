@@ -8,7 +8,7 @@ from sol import solicitar_item
 from send_email import send, send_client
 from user_managements import users_manage
 from hashes import make_hashes, check_hashes
-from cal import tt_cal, cal_2
+from cal import tt_cal, calendario
 
 
 st.set_page_config(page_title='Pioneiros da colina')
@@ -84,8 +84,7 @@ def main():
             elif choice == 'Classes':
                 make_class()
             elif choice == "Calendário":
-                #tt_cal()
-                cal_2()
+                calendario()
 
 
 

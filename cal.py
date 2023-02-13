@@ -32,7 +32,7 @@ def tt_cal():
     st.write("Eventos:", events)
 
 
-def cal_2():
+def calendario():
     year = date.today().year
     month = date.today().month
     # Criar tabela para eventos
