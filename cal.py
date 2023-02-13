@@ -37,8 +37,7 @@ def calendario():
     month = date.today().month
     # Criar tabela para eventos
     # Chamar a tabela e pegar os eventos do mes atual
-    dates = [{'Dia': 7, 'Evento': 'niver'}, {'Dia': 11, 'Evento': 'teste'}]
-    text_cal = calendar.HTMLCalendar(firstweekday=0)
+    text_cal = calendar.HTMLCalendar(firstweekday=6)
     meses = {'January': 'Janeiro',
              'February': 'Fevereiro',
              'March': 'Março',
@@ -69,7 +68,7 @@ def calendario():
     padrao = '<tr><td class="dia">{data}</td><td class="ev">{texto}</td></tr>'
     fim = '</table></body>'
     for index, row in df.iterrows():
-        x = x.replace(f">{row['dia']}<", f'style="background-color:#464e5f">{row["dia"]}<')
+        x = x.replace(f">{row['dia']}<", f'style="background-color:{row["color"]}">{row["dia"]}<')
         n = padrao.replace('{data}', f"{row['dia']}").replace('{texto}', f"{row['evento']}")
         itable += n
     itable += fim
