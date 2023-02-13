@@ -92,7 +92,8 @@ def main():
             st.sidebar.error("Incorrect Username/Password")
     else:
         tab1, tab2, tab3 = st.tabs(["Nosso clube", "Inscrição de membros", "Solicitação externa"])
-
+        with tab2:
+            calendario()
         with tab3:
             tab3.subheader("Solicitação de empréstimo de material")
             tab3.markdown("O empréstimo é feito exclusivamente para departamentos interndo do UNASP-SP")
