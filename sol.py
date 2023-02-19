@@ -1,54 +1,66 @@
 import streamlit as st
 from datetime import timedelta, date
 import pandas as pd
-import sqlite3
+from sqlalchemy import create_engine, text
+from sqlalchemy import and_
+import sqlalchemy as db
+from configparser import ConfigParser
+key = ".env"
+parser = ConfigParser()
+_ = parser.read(key)
+db_url = parser.get('postgres', 'db_url')
+engine = create_engine(db_url)
+metadata = db.MetaData()
+conn = engine.connect()
+patrimonio = db.Table('patrimonio', metadata, autoload_with=engine)
+sol_interna = db.Table('solicitacao_interna', metadata, autoload_with=engine)
+sol_historico = db.Table('solicitacao_historico', metadata, autoload_with=engine)
 
 
 def check_itens():
-    conn = sqlite3.connect('./data.db')
-    df = pd.read_sql('select item from items', conn)
-    lista = df['item'].tolist()
+    query = db.select(patrimonio.columns.item_name)
+    df = pd.read_sql(con=conn, sql=query)
+    lista = df['item_name'].tolist()
     return lista
 
 
 def check_qtd(item_name):
-    conn = sqlite3.connect('./data.db')
-    df = pd.read_sql(f"SELECT quantidade  FROM items WHERE item = '{item_name}'", conn)
-    conn.close()
+    query = db.select(patrimonio.columns.quantidade).where(patrimonio.columns.item_name == item_name)
+    df = pd.read_sql(con=conn, sql=query)
     qtd = df['quantidade'][0]
     return qtd
 
 
 def check_data(data):
-    conn = sqlite3.connect('./data.db')
-    df = pd.read_sql(f"SELECT itens FROM solicitacao_historico WHERE data = '{data}'", conn)
-    if len(df['itens']) != 0:
+    query = db.select(sol_historico.columns.pedido).where(sol_historico.columns.data == data)
+    df = pd.read_sql(con=conn, sql=query)
+    if len(df['pedido']) != 0:
         st.session_state.has_pedido_data = True
-        st.session_state.pedido_data[data] = eval(df['itens'][0])
+        st.session_state.pedido_data[data] = df['pedido'][0]
     else:
         st.session_state.has_pedido_data = False
         st.session_state.pedido_data[data] = {}
 
 
 def check_pedido(data):
-    conn = sqlite3.connect('./data.db')
-    df = pd.read_sql(f"SELECT pedido  FROM solicitacao_interna WHERE username = '{st.session_state.username}' AND reuniao = '{data}'", conn)
+    query = db.select(sol_interna.columns.pedido).where(and_(sol_interna.columns.user_id == st.session_state.user_id, sol_interna.columns.reuniao == data))
+    df = pd.read_sql(con=conn, sql=query)
     if st.session_state.username not in st.session_state.pedido_user:
         st.session_state.pedido_user[st.session_state.username] = {}
     if len(df) != 0:
         st.session_state.has_pedido_user = True
-        st.session_state.pedido_user[st.session_state.username][data] = eval(df['pedido'][0])
+        st.session_state.pedido_user[st.session_state.username][data] = df['pedido'][0]
     else:
-
         st.session_state.pedido_user[st.session_state.username] = {data: {}}
         st.session_state.has_pedido_user = False
 
 
 def check_pedido_c(data):
-    conn = sqlite3.connect('./data.db')
-    df = pd.read_sql(f"SELECT pedido  FROM solicitacao_interna WHERE username = '{st.session_state.username}' AND reuniao = '{data}'", conn)
+    query = db.select(sol_interna.columns.pedido).where(
+        and_(sol_interna.columns.user_id == st.session_state.user_id, sol_interna.columns.reuniao == data))
+    df = pd.read_sql(con=conn, sql=query)
     if len(df) != 0:
-        st.session_state.pedido_c = eval(df['pedido'][0])
+        st.session_state.pedido_c = df['pedido'][0]
     else:
         st.session_state.pedido_c = {}
 
@@ -67,12 +79,11 @@ def difference(novo, antigo):
 
 
 def solicitar_item():
-    conn = sqlite3.connect('data.db')
-    c = conn.cursor()
     end_date = date.today() + timedelta(days=8)
     data = st.date_input("Data da reunião")
     if st.button("data") or st.session_state.sub_data:
         st.session_state.sub_data = True
+        st.write(data)
         check_pedido_c(data)
         if st.session_state.username not in st.session_state.pedido_user:
             st.session_state.pedido_user[st.session_state.username] = {}
@@ -118,14 +129,14 @@ def solicitar_item():
                         st.write(f"{i}: {st.session_state.pedido_user[st.session_state.username][data][i]['qtd']}")
                 e, bt, e2 = st.columns(3)
                 if bt.button("Finalizar solicitação"):
-                    X = str(st.session_state.pedido_user[st.session_state.username][data])
-                    X = X.replace("'", '"')
+                    X = st.session_state.pedido_user[st.session_state.username][data]
+                    st.write(X)
                     if st.session_state.has_pedido_user:
-                        query = f"UPDATE solicitacao_interna SET pedido = '{X}' WHERE username = '{st.session_state.username}' AND reuniao = '{data}'"
+                        query = db.update(sol_interna).where(and_(sol_interna.columns.user_id == st.session_state.user_id,sol_interna.columns.reuniao == data)).values(X)
                     else:
-                        query = f"INSERT INTO solicitacao_interna(username, pedido, reuniao) VALUES ('{st.session_state.username}', '{X}', '{data}')"
-                    c.execute(query)
-
+                        query = db.insert(sol_interna).values(pedido=X, user_id=st.session_state.user_id, reuniao=data)
+                    conn.execute(query)
+                    conn.commit()
                     if st.session_state.has_pedido_data:
                         dif = difference(st.session_state.pedido_user[st.session_state.username][data], st.session_state.pedido_c)
                         for i in dif:
@@ -133,11 +144,11 @@ def solicitar_item():
                                 st.session_state.pedido_data[data][i]['qtd'] += dif[i]['qtd']
                             else:
                                 st.session_state.pedido_data[data][i] = dif[i]
-                        X = str(st.session_state.pedido_data[data])
-                        X = X.replace("'", '"')
-                        c.execute(f"UPDATE solicitacao_historico SET itens = '{X}' WHERE data = '{data}'")
+                        X = st.session_state.pedido_data[data]
+                        query = db.update(sol_historico).where(sol_historico.columns.data == data).values(X)
                     else:
-                        c.execute(f"INSERT INTO solicitacao_historico(data, itens) VALUES ('{data}', '{X}')")
+                        query = db.insert(sol_historico).values(data=data, pedido=X)
+                    conn.execute(query)
                     conn.commit()
                     st.session_state.pedido_c = {}
                     st.session_state.pedido_data = {}

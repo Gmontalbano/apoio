@@ -1,14 +1,16 @@
 import streamlit as st
-import sqlite3
 from PIL import Image
-
 from controle import main_controle
 from classes import make_class
 from sol import solicitar_item
 from send_email import send, send_client
 from user_managements import users_manage
 from hashes import make_hashes, check_hashes
-from cal import tt_cal, calendario
+from cal import calendario, add_event, show_cal, cal_m
+from sqlalchemy import create_engine, text
+from sqlalchemy import and_
+import sqlalchemy as db
+from configparser import ConfigParser
 
 
 st.set_page_config(page_title='Pioneiros da colina')
@@ -17,6 +19,8 @@ if "load_state" not in st.session_state:
     st.session_state.load_state = False
 if "username" not in st.session_state:
     st.session_state.username = ""
+if "user_id" not in st.session_state:
+    st.session_state.user_id = 0
 if "sub_data" not in st.session_state:
     st.session_state.sub_data = False
 if "pedido_data" not in st.session_state:
@@ -32,19 +36,34 @@ if "pedido_c" not in st.session_state:
 if "loggin" not in st.session_state:
     st.session_state.loggin = False
 
-conn = sqlite3.connect('data.db')
-c = conn.cursor()
+key = ".env"
+parser = ConfigParser()
+_ = parser.read(key)
+db_url = parser.get('postgres', 'db_url')
+engine = create_engine(db_url)
+metadata = db.MetaData()
+conn = engine.connect()
+users = db.Table('users_table', metadata, autoload_with=engine)
 
 
 def login_user(username, password):
-    c.execute('SELECT * FROM userstable WHERE username =? AND password = ?', (username, password))
-    data = c.fetchall()
-    c.execute('SELECT permission FROM userstable WHERE username =? AND password = ?', (username, password))
-    permission = c.fetchall()
-    if data:
-        return data, permission[0][0]
+    data = db.select(users).where(and_(users.columns.username == username, users.columns.password == password))
+    conn = engine.connect()
+    ResultProxy = conn.execute(data)
+    q_result = ResultProxy.fetchall()
+    query = db.select(users.columns.permission).where(and_(users.columns.username == username, users.columns.password == password))
+    ResultProxy = conn.execute(query)
+    permission = ResultProxy.fetchall()
+    query = db.select(users.columns.user_id).where(and_(users.columns.username == username, users.columns.password == password))
+    ResultProxy = conn.execute(query)
+    user_id = ResultProxy.fetchall()
+    if q_result:
+        st.session_state.user_id = user_id[0][0]
+        r = True
+        return r, permission[0][0]
     else:
-        return data, 0
+        r = False
+        return r, 0
 
 
 def main():
@@ -84,7 +103,8 @@ def main():
             elif choice == 'Classes':
                 make_class()
             elif choice == "Calendário":
-                calendario()
+                cal_m()
+
 
 
 
@@ -93,7 +113,7 @@ def main():
     else:
         tab1, tab2, tab3 = st.tabs(["Nosso clube", "Calendário", "Solicitação externa"])
         with tab2:
-            calendario()
+            show_cal()
         with tab3:
             tab3.subheader("Solicitação de empréstimo de material")
             tab3.markdown("O empréstimo é feito exclusivamente para departamentos interndo do UNASP-SP")
