@@ -194,10 +194,6 @@ def update_event():
     st.subheader("Atualizar")
     events = event_lis()
     event_update = st.selectbox("Evento", events, key="event_update")
-    change_name = False
-    change_inicio = False
-    change_fim = False
-    change_cor = False
     nome = st.checkbox("Nome")
     data = st.checkbox("Data")
     cor = st.checkbox("Cor")
