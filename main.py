@@ -2,12 +2,12 @@ import streamlit as st
 from PIL import Image
 from controle import main_controle
 from classes import make_class
-from sol import solicitar_item
-from send_email import send, send_client
+from sol import solicitar_item, sol_externa
+
 from user_managements import users_manage
 from hashes import make_hashes, check_hashes
-from cal import calendario, add_event, show_cal, cal_m
-from sqlalchemy import create_engine, text
+from cal import show_cal, cal_m
+from sqlalchemy import create_engine
 from sqlalchemy import and_
 import sqlalchemy as db
 from configparser import ConfigParser
@@ -115,37 +115,8 @@ def main():
         with tab2:
             show_cal()
         with tab3:
-            tab3.subheader("Solicitação de empréstimo de material")
-            tab3.markdown("O empréstimo é feito exclusivamente para departamentos interndo do UNASP-SP")
-            nome = tab3.text_input("Nome", key="requester_name")
-            email = tab3.text_input("Email", key="requester_email")
-            telefone = tab3.text_input("Telefone", key="requester_tel")
-            # tab3.text_input("CPF", key="requester_cpf")
-            dep = tab3.text_input("Departamento", key="requester_departament")
-            meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
-            coleta, devo = tab3.columns(2)
-            coleta.subheader("Dia para coletar o material")
-            dia = coleta.selectbox("Dia", range(1, 32), key='cd')
-            mes = coleta.selectbox("Mes", meses, key='cm')
-            devo.subheader("Devolução o material")
-            diad = devo.selectbox("Dia", range(1, 32), key='dd')
-            mesd = devo.selectbox("Mes", meses, key='dm')
-            me, bc = st.columns(2)
-            me.metric("Mesas", 40)
-            bc.metric("Bancos", 300)
-            mesas = me.number_input("Insira a quantidade de mesas", step=1)
-            bancos = bc.number_input("Insira a quantidade de bancos", step=1)
-            if tab3.button("Solcitar material"):
-                with st.spinner(text="Fazendo solicitação..."):
-                    text = f"{nome} do departamento {dep} solicitou material \n Coleta: {dia}/{mes} \n Devolução: {diad}/{mesd} \n Mesas: {mesas} \n Bancos: {bancos}\n{email} |  {telefone}"
-                    send(text)
-                    text = f"Olá, {nome}.\n" \
-                           f"Obrigado por utilizar nosso sistema de solicitação de materiais, em breve entraremos em contato para confirmarmos a disponibilidade e entrega\n" \
-                           f"Grato, Clube de desbravadores pioneiros da colina" \
-                           f"Solicitação \nMesas: {mesas} \n Bancos: {bancos}\n" \
-                           f"Este email é uma confirmação da solicitação, entraremos em contato para aprovar o empréstimo"
-                    send_client(text, email)
-                tab3.success("Solcitação enviada")
+            sol_externa()
+
 
 
 if __name__ == '__main__':

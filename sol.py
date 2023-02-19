@@ -1,10 +1,12 @@
 import streamlit as st
+import time
 from datetime import timedelta, date
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy import and_
 import sqlalchemy as db
 from configparser import ConfigParser
+from send_email import send, send_client
 key = ".env"
 parser = ConfigParser()
 _ = parser.read(key)
@@ -15,6 +17,7 @@ conn = engine.connect()
 patrimonio = db.Table('patrimonio', metadata, autoload_with=engine)
 sol_interna = db.Table('solicitacao_interna', metadata, autoload_with=engine)
 sol_historico = db.Table('solicitacao_historico', metadata, autoload_with=engine)
+externa = db.Table("solicitacao_externa", metadata, autoload_with=engine)
 
 
 def check_itens():
@@ -76,6 +79,43 @@ def difference(novo, antigo):
         if key not in novo:
             result[key] = {'item': key, 'qtd': -antigo[key]['qtd']}
     return result
+
+
+def sol_externa():
+    st.subheader("Solicitação de empréstimo de material")
+    st.markdown("O empréstimo é feito exclusivamente para departamentos internos do UNASP-SP")
+    nome = st.text_input("Nome", key="requester_name")
+    email = st.text_input("Email", key="requester_email")
+    telefone = st.text_input("Telefone", key="requester_tel")
+    dep = st.text_input("Departamento", key="requester_departament")
+    # meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+    coleta, devo = st.columns(2)
+    coleta.subheader("Dia para coletar o material")
+    data_coleta = st.date_input("Selecione a data", key="Coleta")
+    devo.subheader("Devolução o material")
+    data_devo = st.date_input("Selecione a data", key="Devolucao")
+    me, bc = st.columns(2)
+    me.metric("Mesas", 40)
+    bc.metric("Bancos", 300)
+    mesas = me.number_input("Insira a quantidade de mesas", step=1)
+    bancos = bc.number_input("Insira a quantidade de bancos", step=1)
+    if st.button("Solcitar material"):
+        with st.spinner(text="Fazendo solicitação..."):
+            query = db.insert(externa).values(pedido={'mesas': mesas, 'bancos': bancos}, departamento=dep, email=email,nome=nome, data_coleta=data_coleta, data_devol=data_devo)
+            conn.execute(query)
+            conn.commit()
+            text = f"{nome} do departamento {dep} solicitou material \n Coleta: {data_coleta.strftime('%d/%m/%Y')}\n Devolução: {data_devo.strftime('%d/%m/%Y')} \n Mesas: {mesas} \n Bancos: {bancos}\n{email} |  {telefone}"
+            send(text)
+            text = f"Olá, {nome}.\n" \
+                   f"Obrigado por utilizar nosso sistema de solicitação de materiais, em breve entraremos em contato para confirmarmos a disponibilidade e entrega\n" \
+                   f"Grato, Clube de desbravadores pioneiros da colina\n" \
+                   f"Solicitação \nMesas: {mesas} \n Bancos: {bancos}\n" \
+                   f"Coleta: {data_coleta.strftime('%d/%m/%Y')}\n Devolução: {data_devo.strftime('%d/%m/%Y')}\n" \
+                   f"Este email é uma confirmação da solicitação, entraremos em contato para aprovar o empréstimo"
+            send_client(text, email)
+        st.success("Solcitação enviada")
+        time.sleep(0.5)
+        st.experimental_rerun
 
 
 def solicitar_item():
