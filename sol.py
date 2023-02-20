@@ -2,7 +2,7 @@ import streamlit as st
 import time
 from datetime import timedelta, date
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine,update, func
 from sqlalchemy import and_
 import sqlalchemy as db
 from configparser import ConfigParser
@@ -173,11 +173,17 @@ def solicitar_item():
                     X = st.session_state.pedido_user[st.session_state.username][data]
                     st.write(X)
                     if st.session_state.has_pedido_user:
-                        query = db.update(sol_interna).where(and_(sol_interna.columns.user_id == st.session_state.user_id,sol_interna.columns.reuniao == data)).values(X)
+                        #Gambiarra
+                        query = db.delete(sol_interna).where(and_(sol_interna.columns.user_id == st.session_state.user_id, sol_interna.columns.reuniao == data))
+                        conn.execute(query)
+                        query = db.insert(sol_interna).values(pedido=X, user_id=st.session_state.user_id, reuniao=data)
+                        conn.execute(query)
+                        conn.commit()
+                        #query = update(sol_interna).values(pedido=func.json_set(sol_interna.columns.pedido, f'{k}', X[k])).where(and_(sol_interna.columns.user_id == st.session_state.user_id,sol_interna.columns.reuniao == data))
                     else:
                         query = db.insert(sol_interna).values(pedido=X, user_id=st.session_state.user_id, reuniao=data)
-                    conn.execute(query)
-                    conn.commit()
+                        conn.execute(query)
+                        conn.commit()
                     if st.session_state.has_pedido_data:
                         dif = difference(st.session_state.pedido_user[st.session_state.username][data], st.session_state.pedido_c)
                         for i in dif:
@@ -186,11 +192,17 @@ def solicitar_item():
                             else:
                                 st.session_state.pedido_data[data][i] = dif[i]
                         X = st.session_state.pedido_data[data]
-                        query = db.update(sol_historico).where(sol_historico.columns.data == data).values(X)
+                        #Gambiarra
+                        query = db.delete(sol_historico).where(sol_historico.columns.data == data)
+                        conn.execute(query)
+                        query = db.insert(sol_historico).values(data=data, pedido=X)
+                        conn.execute(query)
+                        conn.commit()
+                        #query = db.update(sol_historico).where(sol_historico.columns.data == data).values(X)
                     else:
                         query = db.insert(sol_historico).values(data=data, pedido=X)
-                    conn.execute(query)
-                    conn.commit()
+                        conn.execute(query)
+                        conn.commit()
                     st.session_state.pedido_c = {}
                     st.session_state.pedido_data = {}
                     st.session_state.pedido_user = {}
