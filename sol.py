@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import and_
 import sqlalchemy as db
 from configparser import ConfigParser
+from controle import card
 from send_email import send, send_client
 key = ".env"
 parser = ConfigParser()
@@ -101,7 +102,7 @@ def sol_externa():
     bancos = bc.number_input("Insira a quantidade de bancos", step=1)
     if st.button("Solcitar material"):
         with st.spinner(text="Fazendo solicitação..."):
-            query = db.insert(externa).values(pedido={'mesas': mesas, 'bancos': bancos}, departamento=dep, email=email,nome=nome, data_coleta=data_coleta, data_devol=data_devo)
+            query = db.insert(externa).values(pedido={'mesas': mesas, 'bancos': bancos}, departamento=dep, email=email, nome=nome, data_coleta=data_coleta, data_devol=data_devo)
             conn.execute(query)
             conn.commit()
             text = f"{nome} do departamento {dep} solicitou material \n Coleta: {data_coleta.strftime('%d/%m/%Y')}\n Devolução: {data_devo.strftime('%d/%m/%Y')} \n Mesas: {mesas} \n Bancos: {bancos}\n{email} |  {telefone}"
@@ -115,7 +116,7 @@ def sol_externa():
             send_client(text, email)
         st.success("Solcitação enviada")
         time.sleep(0.5)
-        st.experimental_rerun
+        st.experimental_rerun()
 
 
 def solicitar_item():
@@ -201,3 +202,56 @@ def solicitar_item():
             check_data(data)
             check_pedido(data)
             st.experimental_rerun()
+
+
+def externa_manage():
+    aberta, entregues, devolvidas, canceladas = st.tabs(["Abertas", "Entregues", "Devolvidas", "Canceladas"])
+    with aberta:
+        query = db.select(externa).where(and_(externa.columns.entregue_at.is_(None),externa.columns.estado.is_(None)))
+        df = pd.read_sql(con=conn, sql=query)
+        st.dataframe(df)
+        df = df.reset_index()
+        for index, row in df.iterrows():
+            mini = row['departamento']
+            nome = row['nome']
+            id = row['sol_ex_id']
+            a = ""
+            for x in row['pedido']:
+                a += f"{x}: {row['pedido'][x]} <br>"
+            card(f"{id} - {nome} - {mini}", a, 'yellow')
+        ids = df['sol_ex_id'].to_list()
+        sol_id = st.selectbox("id", ids, key="id_sol")
+        entregue_to = st.text_input("Quem retirou")
+        if st.button("Entregue"):
+            data_atual = date.today()
+            query = db.update(externa).where(externa.columns.sol_ex_id == sol_id).values(entregue_at=data_atual, entregue_to=entregue_to)
+            conn.execute(query)
+            conn.commit()
+            st.experimental_rerun()
+
+    with entregues:
+        query = db.select(externa).where(and_(externa.columns.entregue_at.is_distinct_from(None),externa.columns.devolvido_at.is_(None), externa.columns.estado.is_(None)))
+        df = pd.read_sql(con=conn, sql=query)
+        st.dataframe(df)
+        for index, row in df.iterrows():
+            mini = row['departamento']
+            nome = row['nome']
+            id = row['sol_ex_id']
+            a = ""
+            for x in row['pedido']:
+                a += f"{x}: {row['pedido'][x]} <br>"
+            card(f"{id} - {nome} - {mini}", a, 'yellow')
+        ids = df['sol_ex_id'].to_list()
+        sol_id = st.selectbox("id", ids, key="id_sol_dev")
+        if st.button("Devolvido"):
+            data_atual = date.today()
+            query = db.update(externa).where(externa.columns.sol_ex_id == sol_id).values(devolvido_at=data_atual)
+            conn.execute(query)
+            conn.commit()
+            st.experimental_rerun()
+    with devolvidas:
+        query = db.select(externa).where(and_(externa.columns.devolvido_at.is_distinct_from(None), externa.columns.estado.is_(None)))
+        df = pd.read_sql(con=conn, sql=query)
+        st.dataframe(df)
+
+
