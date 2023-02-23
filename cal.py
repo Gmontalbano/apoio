@@ -11,6 +11,16 @@ import sqlalchemy as db
 from configparser import ConfigParser
 
 
+def mix_colors(color1, color2):
+    """Mix two colors in HTML format (e.g., #FFFFFF)"""
+    r1, g1, b1 = int(color1[1:3], 16), int(color1[3:5], 16), int(color1[5:7], 16)
+    r2, g2, b2 = int(color2[1:3], 16), int(color2[3:5], 16), int(color2[5:7], 16)
+    r = int((r1 + r2) / 2)
+    g = int((g1 + g2) / 2)
+    b = int((b1 + b2) / 2)
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
 key = ".env"
 parser = ConfigParser()
 _ = parser.read(key)
@@ -84,20 +94,22 @@ def calendario(year, month, resto=None):
             df = df.append(e, ignore_index=True)
     df = df.sort_values(by=['data_inicio'])
     resto = []
+    t = {}
     for index, row in df.iterrows():
         a = {}
         d = row['data_inicio'].day
         dia = None
         if row['data_inicio'].month == row['data_fim'].month:
-
-            while d <= row['data_fim'].day:
-                x = x.replace(f">{d}<", f'style="background-color:{row["cor"]}">{d}<')
-                if dia is None:
-                    dia = str(d)
-                else:
-                    dia += f", {str(d)}"
-                d += 1
-            n = padrao.replace('>{data}', f'style="background-color:{row["cor"]}">{dia}').replace('{texto}', f"{row['evento']}")
+            if row["data_inicio"].day == row["data_fim"].day:
+                n = padrao.replace('>{data}', f'style="background-color:{row["cor"]}">{d}').replace('{texto}', f"{row['evento']}")
+                t[d] = row['cor']
+                #x = x.replace(f">{d}<", f'style="background-color:{row["cor"]};">{d}<')
+            else:
+                while d <= row['data_fim'].day:
+                    t[d] = row['cor']
+                    #x = x.replace(f">{d}<", f'style="background-color:{row["cor"]}">{d}<')
+                    d += 1
+                n = padrao.replace('>{data}', f'style="background-color:{row["cor"]}">{row["data_inicio"].day} - {row["data_fim"].day}').replace('{texto}', f"{row['evento']}")
             itable += n
 
 
@@ -112,19 +124,20 @@ def calendario(year, month, resto=None):
             a['evento'] = row['evento']
             a['cor'] = row['cor']
             resto.append(a)
-            while d <= last_date.day:
-                x = x.replace(f">{d}<",
-                              f'style="background-color:{row["cor"]}">{d}<')
-                if dia is None:
-                    dia = str(d)
-                else:
-                    dia += f", {str(d)}"
-                d += 1
-            n = padrao.replace('{data}', f"{dia}").replace('{texto}', f"{row['evento']}")
-            itable += n
 
+            while d <= last_date.day:
+                t[d] = row['cor']
+                #x = x.replace(f">{d}<", f'style="background-color:{row["cor"]}">{d}<')
+                d += 1
+            n = padrao.replace('>{data}',
+                               f'style="background-color:{row["cor"]}">{row["data_inicio"].day} - {last_date.day}').replace(
+                '{texto}', f"{row['evento']}")
+            itable += n
+    for dia in t:
+        x = x.replace(f">{dia}<", f'style="background-color:{t[dia]}">{dia}<')
     x = x.split("<body>")
     x = x[0]
+
     with co:
         stc.html(x, height=250, width=250)
     with ev:
