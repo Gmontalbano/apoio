@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import datetime as dt
 from datetime import timedelta, date
 import pandas as pd
 from sqlalchemy import create_engine,update, func
@@ -8,6 +9,7 @@ import sqlalchemy as db
 from configparser import ConfigParser
 from controle import card
 from send_email import send, send_client
+import calendar
 key = ".env"
 parser = ConfigParser()
 _ = parser.read(key)
@@ -234,9 +236,16 @@ def externa_manage():
         ids = df['sol_ex_id'].to_list()
         sol_id = st.selectbox("id", ids, key="id_sol")
         entregue_to = st.text_input("Quem retirou")
-        if st.button("Entregue"):
+        b1,b2 = st.columns(2)
+        if b1.button("Entregue"):
             data_atual = date.today()
             query = db.update(externa).where(externa.columns.sol_ex_id == sol_id).values(entregue_at=data_atual, entregue_to=entregue_to)
+            conn.execute(query)
+            conn.commit()
+            st.experimental_rerun()
+        if b2.button("Cancelar"):
+            data_atual = date.today()
+            query = db.update(externa).where(externa.columns.sol_ex_id == sol_id).values(estado=data_atual)
             conn.execute(query)
             conn.commit()
             st.experimental_rerun()
@@ -262,8 +271,30 @@ def externa_manage():
             conn.commit()
             st.experimental_rerun()
     with devolvidas:
-        query = db.select(externa).where(and_(externa.columns.devolvido_at.is_distinct_from(None), externa.columns.estado.is_(None)))
+        month = st.selectbox("Mês", range(1,13), key="mes")
+        year = st.selectbox("Ano", range(2022,date.today().year+1), key="year")
+        start_date = dt.date(year, month, 1)
+        num_days = calendar.monthrange(year, month)[1]
+        end_date = dt.date(year, month, num_days)
+        query = db.select(externa).filter(and_(externa.columns.estado >= start_date, externa.columns.estado <= end_date)).where(and_(externa.columns.devolvido_at.is_distinct_from(None), externa.columns.estado.is_(None)))
         df = pd.read_sql(con=conn, sql=query)
         st.dataframe(df)
+    with canceladas:
+        month = st.selectbox("Mês", range(1, 13), key="mes_cancel")
+        year = st.selectbox("Ano", range(2022, date.today().year+1), key="year_cancel")
+        start_date = dt.date(year, month, 1)
+        num_days = calendar.monthrange(year, month)[1]
+        end_date = dt.date(year, month, num_days)
+        query = db.select(externa).filter(and_(externa.columns.estado >= start_date, externa.columns.estado <= end_date)).where(externa.columns.estado.is_not(None))
+        df = pd.read_sql(con=conn, sql=query)
+        st.dataframe(df)
+        for index, row in df.iterrows():
+            mini = row['departamento']
+            nome = row['nome']
+            id = row['sol_ex_id']
+            a = f"Cancelado a {row['estado'].strftime('%d/%m/%Y')}<br>"
+            for x in row['pedido']:
+                a += f"{x}: {row['pedido'][x]} <br>"
+            card(f"{id} - {nome} - {mini}", a, 'red')
 
 
