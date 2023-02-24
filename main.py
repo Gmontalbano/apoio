@@ -3,7 +3,6 @@ from PIL import Image
 from controle import main_controle
 from classes import make_class
 from sol import solicitar_item, sol_externa, externa_manage
-
 from user_managements import users_manage
 from hashes import make_hashes, check_hashes
 from cal import show_cal, cal_m
@@ -11,6 +10,8 @@ from sqlalchemy import create_engine
 from sqlalchemy import and_
 import sqlalchemy as db
 from configparser import ConfigParser
+
+from drive import teste
 
 st.set_page_config(page_title='Pioneiros da colina')
 
@@ -34,7 +35,12 @@ if "pedido_c" not in st.session_state:
     st.session_state.pedido_c = {}
 if "loggin" not in st.session_state:
     st.session_state.loggin = False
-
+if "load_file" not in st.session_state:
+    st.session_state.load_file = False
+if "folder" not in st.session_state:
+    st.session_state.folder = False
+if "folder_id" not in st.session_state:
+    st.session_state.folder_id = None
 key = ".env"
 parser = ConfigParser()
 _ = parser.read(key)
@@ -110,11 +116,13 @@ def main():
         else:
             st.sidebar.error("Incorrect Username/Password")
     else:
-        tab1, tab2, tab3 = st.tabs(["Nosso clube", "Calendário", "Solicitação externa"])
+        tab1, tab2, tab3,tab4 = st.tabs(["Nosso clube", "Calendário", "Solicitação externa","drive"])
         with tab2:
             show_cal()
         with tab3:
             sol_externa()
+        with tab4:
+            teste()
 
 
 if __name__ == '__main__':
