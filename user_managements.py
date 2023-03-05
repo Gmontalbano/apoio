@@ -1,38 +1,89 @@
-import sqlite3
 import time
-
 import pandas as pd
 import streamlit as st
 from hashes import make_hashes, check_hashes
+from sqlalchemy import create_engine, text
+from sqlalchemy import and_
+import sqlalchemy as db
+from configparser import ConfigParser
+key = ".env"
+parser = ConfigParser()
+_ = parser.read(key)
+db_url = parser.get('postgres', 'db_url')
+engine = create_engine(db_url)
+metadata = db.MetaData()
+conn = engine.connect()
+users_table = db.Table('users_table', metadata, autoload_with=engine)
 
 
 def add_userdata(username, password, email, permission):
-    conn = sqlite3.connect('data.db')
-    c = conn.cursor()
-    c.execute('INSERT INTO userstable(username,password,email,permission) VALUES (?,?,?,?)',
-              (username, password, email, permission))
+    query = db.insert(users_table).values(username=username, password=password, email=email, permission=permission)
+    conn.execute(query)
     conn.commit()
 
 
+
 def view_all_users():
-    conn = sqlite3.connect('data.db')
-    df = pd.read_sql('select username, email, permission from userstable', conn)
+    query = db.select(users_table.columns.username, users_table.columns.email, users_table.columns.permission)
+    df = pd.read_sql(con=conn, sql=query)
     return df
 
 
 def user_lis():
-    conn = sqlite3.connect('data.db')
-    query = 'SELECT username FROM userstable'
-    df = pd.read_sql(query, conn)
-    users = df['username'].to_list()
-    return users
+    query = db.select(users_table.columns.username)
+    df = pd.read_sql(con=conn, sql=query)
+    user = df['username'].to_list()
+    return user
 
 
 def delete_user(user_name):
-    conn = sqlite3.connect('data.db')
-    c = conn.cursor()
-    c.execute(f"DELETE FROM userstable WHERE username = '{user_name}'")
+    query = db.delete(users_table).where(users_table.columns.username == user_name)
+    conn.execute(query)
     conn.commit()
+
+
+def update_user():
+    users = user_lis()
+    user_update = st.selectbox("Usuario", users, key="update_user")
+    change_pass = False
+    change_email = False
+    change_permission = False
+    if st.checkbox("Senha"):
+        change_pass = True
+        att_password = st.text_input("Nova senha")
+    if st.checkbox("email"):
+        change_email = True
+        # query = f"SELECT email FROM userstable WHERE username = '{user_update}'"
+        query = db.select(users_table.columns.email).where(users_table.columns.username == user_update)
+        df = pd.read_sql(con=conn, sql=query)
+        email = df['email'][0]
+        att_email = st.text_input("Email", email)
+    if st.checkbox("Permição"):
+        change_permission = True
+        query = db.select(users_table.columns.permission).where(users_table.columns.username == user_update)
+        df = pd.read_sql(con=conn, sql=query)
+        permission = df['permission'][0]
+        type_permission = ['admin', 'user', 'apoio', 'secretaria']
+        index = type_permission.index(permission)
+        type_permission.insert(0, type_permission.pop(index))
+        perm = st.selectbox("Permissão", type_permission)
+    if st.button("Atualizar usuario"):
+        if change_pass:
+            query = db.update(users_table).where(users_table.columns.username == user_update).values(
+                password=make_hashes(att_password))
+            conn.execute(query)
+            conn.commit()
+        if change_email:
+            query = db.update(users_table).where(users_table.columns.username == user_update).values(email=att_email)
+            conn.execute(query)
+            conn.commit()
+        if change_permission:
+            query = db.update(users_table).where(users_table.columns.username == user_update).values(permission=perm)
+            conn.execute(query)
+            conn.commit()
+        time.sleep(0.5)
+        st.success("Updated user")
+        st.experimental_rerun()
 
 
 def users_manage():
@@ -63,47 +114,8 @@ def users_manage():
 
     #Update
     with update:
-        conn = sqlite3.connect('data.db')
-        c = conn.cursor()
-        users = user_lis()
-        user_update = st.selectbox("Usuario", users, key="update_user")
-        change_pass = False
-        change_email = False
-        change_permission = False
-        if st.checkbox("Senha"):
-            change_pass = True
-            att_password = st.text_input("Nova senha")
-        if st.checkbox("email"):
-            change_email = True
-            query = f"SELECT email FROM userstable WHERE username = '{user_update}'"
-            df = pd.read_sql(query, conn)
-            email = df['email'][0]
-            att_email = st.text_input("Email",email)
-        if st.checkbox("Permição"):
-            change_permission = True
-            query = f"SELECT permission FROM userstable WHERE username = '{user_update}'"
-            df = pd.read_sql(query, conn)
-            permission = df['permission'][0]
-            type_permission = ['admin', 'user', 'apoio', 'secretaria']
-            index = type_permission.index(permission)
-            type_permission.insert(0, type_permission.pop(index))
-            perm = st.selectbox("Permissão", type_permission)
-        if st.button("Atualizar usuario"):
-            changes = ""
-            if change_pass:
-                changes += f"password = '{make_hashes(att_password)}'"
-            if change_email:
-                if len(changes) > 0:
-                    changes += ", "
-                changes += f"email = '{att_email}'"
-            if change_permission:
-                if len(changes) > 0:
-                    changes += ", "
-                changes += f"permission = '{perm}'"
-            st.write(changes)
-            c.execute(f'UPDATE userstable SET {changes} WHERE username = "{user_update}"')
-            conn.commit()
-            st.success("Updated user")
+        update_user()
+
 
     # All
     with all_user:
