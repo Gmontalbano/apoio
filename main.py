@@ -1,17 +1,17 @@
 import streamlit as st
 from PIL import Image
-from controle import main_controle
-from classes import make_class
-from sol import solicitar_item, sol_externa, externa_manage
-from user_managements import users_manage
-from hashes import make_hashes, check_hashes
-from cal import show_cal, cal_m
+from pgs.controle import main_controle
+from pgs.classes import make_class
+from pgs.sol import solicitar_item, sol_externa, externa_manage
+from pgs.user_managements import users_manage
+from utils.hashes import make_hashes, check_hashes
+from pgs.cal import show_cal, cal_m
 from sqlalchemy import create_engine
 from sqlalchemy import and_
 import sqlalchemy as db
 from configparser import ConfigParser
 
-from drive import teste
+from pgs.drive import teste
 
 st.set_page_config(page_title='Pioneiros da colina')
 
@@ -96,7 +96,7 @@ def main():
                 'admin': ["Solicitação de material", "Estoque", "Usuarios", "Classes", "Calendário", "Externa"],
                 'user': ["Solicitação de material"],
                 'apoio': ["Solicitação de material", "Estoque"],
-                'secretaria': ['Classes']}
+                'secretaria': ['Classes', 'Calendário']}
             menu = type_permission[permission]
 
             choice = st.sidebar.selectbox("Selecione uma opção", menu)

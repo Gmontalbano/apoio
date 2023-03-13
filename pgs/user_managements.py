@@ -1,9 +1,8 @@
 import time
 import pandas as pd
 import streamlit as st
-from hashes import make_hashes, check_hashes
-from sqlalchemy import create_engine, text
-from sqlalchemy import and_
+from utils.hashes import make_hashes
+from sqlalchemy import create_engine
 import sqlalchemy as db
 from configparser import ConfigParser
 key = ".env"

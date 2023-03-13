@@ -3,12 +3,12 @@ import time
 import datetime as dt
 from datetime import timedelta, date
 import pandas as pd
-from sqlalchemy import create_engine,update, func
+from sqlalchemy import create_engine
 from sqlalchemy import and_
 import sqlalchemy as db
 from configparser import ConfigParser
-from controle import card
-from send_email import send, send_client
+from pgs.controle import card
+from utils.send_email import send, send_client
 import calendar
 key = ".env"
 parser = ConfigParser()
