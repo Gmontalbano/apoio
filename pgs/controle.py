@@ -1,10 +1,22 @@
+from time import sleep
+
 import streamlit as st
 import pandas as pd
-import sqlite3
+from sqlalchemy import create_engine, text
+from sqlalchemy import and_
+import sqlalchemy as db
+from configparser import ConfigParser
+key = ".env"
+parser = ConfigParser()
+_ = parser.read(key)
+db_url = parser.get('postgres', 'db_url')
 
 
-conn = sqlite3.connect('data.db')
-c = conn.cursor()
+engine = create_engine(db_url)
+metadata = db.MetaData()
+conn = engine.connect()
+patrimonio = db.Table('patrimonio', metadata, autoload_with=engine)
+sol_interna = db.Table('solicitacao_interna', metadata, autoload_with=engine)
 
 
 def add_item():
@@ -14,55 +26,34 @@ def add_item():
     item_quantity = st.number_input("Insira a quantidade do item a ser adicionado", min_value=1, value=1)
     if st.button("Adicionar item"):
         # Salva as alterações
-        c.execute(f"INSERT INTO items (item, quantidade) VALUES ('{item_name}', '{item_quantity}')")
+        query = db.insert(patrimonio).values(item_name=item_name, quantidade=item_quantity)
+        conn.execute(query)
         conn.commit()
         st.success("Item adicionado com sucesso!")
+        sleep(0.5)
+        st.experimental_rerun()
 
 
 def delete_item():
     # Carrega do banco a coluna item
-    df = pd.read_sql('select item from items', conn)
-    lista = df['item'].tolist()
+    query = db.select(patrimonio.columns.item_name)
+    df = pd.read_sql(con=conn, sql=query)
+    lista = df['item_name'].tolist()
     # Cria um menu dropdown com os nomes dos itens no estoque
     item_name = st.selectbox("Selecione o item para deletar", lista)
     if st.button("Deletar item"):
         # Deleta o item selecionado do estoque
-        c.execute(f"DELETE FROM items WHERE item = '{item_name}'")
+        query = db.delete(patrimonio).where(patrimonio.columns.item_name == item_name)
+        conn.execute(query)
         conn.commit()
         st.success("Item deletado com sucesso!")
+        sleep(0.5)
+        st.experimental_rerun()
 
 
 def view_items():
-    df = pd.read_sql('select * from items', conn)
-    st.dataframe(df)
-
-
-def devolver_item():
-    # alterar para tabela historico e tirar coluna ocupado
-    conn = sqlite3.connect('data.db')
-    c = conn.cursor()
-    df = pd.read_sql('select item from items', conn)
-
-    lista = df['item'].tolist()
-    name, value = st.columns(2)
-    # Cria um menu dropdown com  os nomes dos itens no estoque
-    item_name = name.selectbox("Selecione o item para devolver", lista)
-    # Recebe a quantidade do item a ser devolvido
-    item_quantity = st.number_input("Insira a quantidade do item a ser devolvido", min_value=1, value=1)
-    if st.button("Devolver item"):
-        df = pd.read_sql(f"select ocupado from items where item = '{item_name}'", conn)
-        devolucao = df['ocupado'][0] - item_quantity
-        c.execute(f'UPDATE items SET ocupado = {devolucao} WHERE item = "{item_name}"')
-        conn.commit()
-        st.experimental_rerun()
-        st.success("Item devolvido com sucesso!")
-
-    conn.close()
-
-
-def mat_reu():
-    df = pd.read_sql('SELECT * FROM solicitacao_interna', conn)
-    st.write("Apenas para teste")
+    query = db.select(patrimonio)
+    df = pd.read_sql(con=conn, sql=query)
     st.dataframe(df)
 
 
@@ -88,29 +79,25 @@ def card(title, content, color='white'):
 
 
 def sol_dia():
-    df = pd.read_sql('SELECT DISTINCT reuniao FROM solicitacao_interna', conn)
+    query = db.select(sol_interna.columns.reuniao).distinct()
+    df = pd.read_sql(con=conn, sql=query)
     datas = df['reuniao'].tolist()
     choice = st.selectbox("Selecione a reunião", datas)
-    dff = pd.read_sql(f"SELECT * FROM solicitacao_interna WHERE reuniao = '{choice}'", conn)
+    query = db.select(sol_interna).where(sol_interna.columns.reuniao == choice)
+    dff = pd.read_sql(con=conn, sql=query)
     st.dataframe(dff)
     for index, row in dff.iterrows():
         p = ""
-        pedido = eval(row['pedido'])
+        pedido = row['pedido']
         for x in pedido:
             p += f"{x}: {pedido[x]['qtd']} <br>"
-        card(f"{row['username']}", f"{p}", color='lightblue')
-
-
-
-    #mat_reu()
+        card(f"{row['user_id']}", f"{p}", color='lightblue')
 
 
 def main_controle():
-    menu = ["Devolução", "Adicionar item", "Deletar item", "Ver estoque", "Reuniões"]
+    menu = ["Adicionar item", "Deletar item", "Ver estoque", "Reuniões"]
     # choice = st.sidebar.selectbox("Selecione uma opção", menu)
-    dev, add, delete, see, reu = st.tabs(menu)
-    with dev:
-        devolver_item()
+    add, delete, see, reu = st.tabs(menu)
     with see:
         view_items()
     with add:
